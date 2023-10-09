@@ -28,7 +28,8 @@ class Ntt_Data:
         self.func_size_B_y = [] 
         self.prog_output = [] 
         self.exec_status_y = [] # Pass/fail 
-        self.fname = str(self.type_str) + "_LUT" + str(self.is_lut)  + "_F" + str(self.fixed_radix) + "_MR" + str(self.max_mixed_radix) + "_P" + str(self.is_parallel) + "_data_sweep.csv"
+        self.varname = str(self.type_str) + "_LUT" + str(self.is_lut)  + "_F" + str(self.fixed_radix) + "_MR" + str(self.max_mixed_radix) + "_P" + str(self.is_parallel)
+        self.fname = self.varname + "_data_sweep.csv"
 
 def run_bash_cmd(bash_command): 
     try: 
@@ -57,10 +58,12 @@ def plot_set(dir_name, objs_to_plot):
         plt.ylabel(column)
         plt.title(f" {column} vs. Dim")
         plt.grid(True)
+        legend_str = []
         for ntt_type in objs_to_plot:
             df = pd.read_csv(ntt_type.fname)
-            plt.plot(df["Dim"], df[column], linestyle='-', label=ntt_type)
-        plt.legend()
+            plt.plot(df["Dim"], df[column], linestyle='-', marker="o", label=ntt_type.varname)
+            legend_str.append(ntt_type.varname)
+        plt.legend(legend_str)
         plt.savefig(folder_path + dir_name + "_" + column.replace(" ","") + ".png", dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -105,12 +108,12 @@ for ntt_type in ntt_objs:
     # Create a line graph for each column
     for column in columns_to_plot:
         plt.figure(figsize=(8, 6))  # Set the figure size
-        plt.plot(df["Dim"].astype(int), df[column].astype(int), linestyle='-', label=column)
+        plt.plot(df["Dim"].astype(int), df[column].astype(int), linestyle='-', marker="o", label=column)
         plt.xlabel("Dim")
         plt.ylabel(column)
         plt.title(ntt_name + f" {column} vs. Dim")
         plt.grid(True)
-        plt.legend()
+        # plt.legend()
         plt.savefig(folder_path + ntt_name + "_" + column.replace(" ","") + ".png", dpi=300, bbox_inches='tight')
         plt.close()
 
