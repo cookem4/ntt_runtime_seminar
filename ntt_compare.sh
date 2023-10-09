@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
-#SBATCH --time=10:00
+#SBATCH --time=20:00
 #SBATCH --job-name mcooke_seminar
 #SBATCH --output=mcooke_seminar_%j.txt
 #SBATCH --mail-type=FAIL
