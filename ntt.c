@@ -181,11 +181,11 @@ static int * g_gen_pows;
 static int * g_inv_gen_pows;
 
 void populate_pows_lut(ntt_ctx * fwd_ctx, ntt_ctx * inv_ctx) {
-    g_gen_pows = malloc(DIM * sizeof(int));
-    g_inv_gen_pows = malloc(DIM * sizeof(int));
+    g_gen_pows = malloc(fwd_ctx->size * sizeof(int));
+    g_inv_gen_pows = malloc(fwd_ctx->size * sizeof(int));
     int cur_g = 1;
     int cur_g_inv = 1;
-    for (int i = 0; i < DIM; i++) {
+    for (int i = 0; i < fwd_ctx->size; i++) {
         g_gen_pows[i] = cur_g;
         g_inv_gen_pows[i] = cur_g_inv;
         cur_g = barrett_reduce(cur_g * fwd_ctx->w, fwd_ctx);
@@ -199,12 +199,12 @@ void populate_pows_lut(ntt_ctx * fwd_ctx, ntt_ctx * inv_ctx) {
 static int * g_gen_pows_cache;
 static char * g_cache_pow_idx; // Small Tag
 
-// Place cache on heap based on DIM
+// Place cache on heap based on fwd_ctx->size
 void init_cache() {
-    g_gen_pows_cache = malloc((DIM/CACHE_RATIO) * sizeof(int));
-    g_cache_pow_idx = malloc((DIM/CACHE_RATIO) * sizeof(char));
+    g_gen_pows_cache = malloc((fwd_ctx->size/CACHE_RATIO) * sizeof(int));
+    g_cache_pow_idx = malloc((fwd_ctx->size/CACHE_RATIO) * sizeof(char));
     // Init tags to -1
-    for (int i = 0; i < DIM/CACHE_RATIO; i++) {
+    for (int i = 0; i < fwd_ctx->size/CACHE_RATIO; i++) {
         g_cache_pow_idx[i] = -1;
     }
 }
@@ -273,13 +273,13 @@ void ntt_impl(ntt_ctx * ctx) {
   for (int i = 0; i < ctx->size; i++) {
       twiddle = 1;
       for (int j = 0; j < ctx->size; j++) {
-          tag = (i*j % DIM/CACHE_RATIO);
-          hit = g_cache_pow_idx[tag] == (i*j % DIM);
+          tag = (i*j % fwd_ctx->size/CACHE_RATIO);
+          hit = g_cache_pow_idx[tag] == (i*j % fwd_ctx->size);
           if (!hit) {
               // TODO check for a hit on neighbour below?
               // TODO check hits from all neighbours then get shortest distance?
-              g_gen_pows_cache[tag] = a_pow_b_mod_m(ctx->w, i*j % DIM, ctx->mod);
-              g_cache_pow_idx[tag] = i*j % DIM;
+              g_gen_pows_cache[tag] = a_pow_b_mod_m(ctx->w, i*j % fwd_ctx->size, ctx->mod);
+              g_cache_pow_idx[tag] = i*j % fwd_ctx->size;
           }
           int temp = barrett_reduce(ctx->in_seq[j] * g_gen_pows_cache[tag], ctx);
           s[i] = s[i] + temp > ctx->mod ? s[i] + temp - ctx->mod : s[i] + temp;
@@ -425,7 +425,7 @@ int ntt_check(ntt_ctx *fwd_ctx, ntt_ctx *inv_ctx) {
     ntt_impl(fwd_ctx);
     // Reset tags
 #if CACHE_BASED == 1
-    for (int i = 0; i < DIM/CACHE_RATIO; i++) {
+    for (int i = 0; i < fwd_ctx->size/CACHE_RATIO; i++) {
         g_cache_pow_idx[i] = -1;
     }
 #endif
